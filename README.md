@@ -14,14 +14,15 @@ Dateien: `app.py` (Server), `index.html` (Oberfläche), `requirements.txt`.
    - Start Command: `gunicorn app:app --workers 1 --threads 4`
    - Instance Type: Free
 5. **Umgebungsvariablen** (unter "Environment"):
-   - `APP_PASSWORD` = ein Passwort deiner Wahl
+   - Ohne Passwort: im Demo-Modus (kein Key) brauchst du nichts. Mit Key setzt du `ALLOW_OPEN` = `1`.
+   - Mit Passwort (empfohlen, sobald ein Key drin ist): `APP_PASSWORD` = ein Passwort deiner Wahl
    - `DONUTSMP_API_KEY` = dein Key (erst setzen, wenn du ihn hast; ohne Key läuft der Demo-Modus)
 6. "Create Web Service". Nach dem Deploy bekommst du eine Adresse wie `donut-market.onrender.com`. Beim Öffnen fragt der Browser nach einem Passwort (Benutzername egal).
 
 Hinweise:
 - Der kostenlose Render-Tarif schläft nach einiger Zeit ein. Der erste Aufruf danach dauert etwa eine Minute.
 - Die Watchlist liegt im Browser jedes Geräts. iPad und Handy haben getrennte Listen, und der Verlauf läuft nur mit, solange die Seite offen ist.
-- Mit echtem Key und ohne `APP_PASSWORD` sperrt sich der Server absichtlich.
+- Mit echtem Key und ohne `APP_PASSWORD` sperrt sich der Server, außer du setzt bewusst `ALLOW_OPEN=1`. Dann kann jeder mit dem Link deinen Key mitnutzen.
 
 ## Lokal auf einem PC
 

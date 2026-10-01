@@ -22,6 +22,7 @@ DEMO = os.getenv("DEMO", "").strip().lower() in ("1", "true", "yes") or not KEY
 ORDERS_PATH = os.getenv("ORDERS_PATH", "").strip().strip("/")
 AH_METHOD = os.getenv("AH_METHOD", "GET").strip().upper()
 APP_PASSWORD = os.getenv("APP_PASSWORD", "").strip()
+ALLOW_OPEN = os.getenv("ALLOW_OPEN", "").strip().lower() in ("1", "true", "yes")
 ON_HOSTING = bool(os.getenv("PORT"))   # Hosting-Dienste setzen PORT; lokal ist es leer
 HERE = os.path.dirname(os.path.abspath(__file__))
 CACHE_TTL = 15       # Sekunden – schont das Limit von 250 Requests/Minute
@@ -210,9 +211,9 @@ def protect():
         ok = auth and hmac.compare_digest((auth.password or "").encode(), APP_PASSWORD.encode())
         if not ok:
             return Response("Passwort nötig", 401, {"WWW-Authenticate": 'Basic realm="Donut Market"'})
-    elif ON_HOSTING and not DEMO:
+    elif ON_HOSTING and not DEMO and not ALLOW_OPEN:
         # Echter Key + öffentlich erreichbar + kein Passwort = andere könnten deinen Key verbrauchen
-        return Response("Setze APP_PASSWORD in den Umgebungsvariablen, bevor du mit echtem Key online gehst.", 503)
+        return Response("Setze APP_PASSWORD (oder bewusst ALLOW_OPEN=1) in den Umgebungsvariablen, bevor du mit echtem Key online gehst.", 503)
 
 
 @app.get("/")
