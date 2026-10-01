@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Donut Market</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #E9F0EC;
+    --panel: #F7FAF8;
+    --ink: #18262A;
+    --muted: #5B6B6E;
+    --line: #C9D6D0;
+    --berry: #B8265A;
+    --glaze: #2F55C8;
+    --up: #1F8A4C;
+    --down: #C0392B;
+    --display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
+    --body: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #121B1C; --panel: #1A2527; --ink: #E4EEEA; --muted: #92A4A2; --line: #2D3C3E;
+      --berry: #E8639A; --glaze: #7C9BFF; --up: #4CC885; --down: #F07A6B;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: 1rem; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 400 15px/1.5 var(--body);
+  }
+  .num { font-variant-numeric: tabular-nums; text-align: right; }
+  button, input, select { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--glaze); outline-offset: 2px; }
+
+  header {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem 2rem;
+    padding: 1.4rem clamp(1rem, 4vw, 3rem) 0;
+  }
+  h1 { font: 800 2rem/1 var(--display); margin: 0; letter-spacing: -.02em; }
+  h1 span { color: var(--berry); }
+  .banner {
+    margin: .9rem clamp(1rem, 4vw, 3rem) 0; padding: .6rem .9rem;
+    border-left: 4px solid var(--berry); background: var(--panel); font-size: .92rem;
+  }
+  nav { display: flex; gap: .25rem; padding: 1rem clamp(1rem, 4vw, 3rem) 0; border-bottom: 1px solid var(--line); margin-top: .8rem; }
+  nav button {
+    background: none; border: 0; padding: .6rem 1rem; cursor: pointer; color: var(--muted);
+    font: 600 1rem var(--display); border-bottom: 3px solid transparent; margin-bottom: -1px;
+  }
+  nav button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--berry); }
+  main { padding: 1.2rem clamp(1rem, 4vw, 3rem) 4rem; }
+  section[hidden] { display: none; }
+
+  .toolbar { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: .8rem; }
+  .toolbar input[type=search] { flex: 1 1 260px; }
+  input, select {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: .5rem .7rem;
+  }
+  .btn {
+    background: var(--ink); color: var(--bg); border: 0; border-radius: 6px; padding: .5rem 1rem;
+    font-weight: 600; cursor: pointer;
+  }
+  .btn.ghost { background: none; color: var(--ink); border: 1px solid var(--line); }
+  .meta { color: var(--muted); margin: .2rem 0 1rem; font-size: .9rem; }
+  .err { color: var(--down); }
+
+  table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--line); }
+  th, td { padding: .55rem .8rem; border-bottom: 1px solid var(--line); text-align: left; }
+  th { font-weight: 600; color: var(--muted); font-size: .88rem; }
+  th.num, td.num { text-align: right; }
+  tr.item { cursor: pointer; }
+  tr.item:hover { background: color-mix(in srgb, var(--glaze) 7%, var(--panel)); }
+  tr.item td:first-child { font-weight: 600; }
+  tr.detail > td { padding: 0; background: var(--bg); }
+  .tiers { margin: .6rem .8rem .8rem 2rem; width: calc(100% - 2.8rem); }
+  tr.tier { cursor: pointer; }
+  tr.tier:hover { background: color-mix(in srgb, var(--berry) 6%, var(--panel)); }
+  tr.tier.best td:first-child { box-shadow: inset 3px 0 0 var(--up); }
+  .sub { margin: 0 0 .4rem 1.2rem; width: calc(100% - 1.2rem); font-size: .88rem; }
+  .caret { display: inline-block; width: 1em; color: var(--muted); }
+  .star {
+    background: none; border: 0; cursor: pointer; font-size: 1.25rem; line-height: 1; color: var(--muted);
+    padding: .2rem .4rem;
+  }
+  .star[aria-pressed="true"] { color: var(--berry); }
+
+  /* Watchlist */
+  .watch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
+  .wcard { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 1rem 1.1rem; }
+  .wcard h3 { font: 700 1.1rem var(--display); margin: 0 0 .1rem; }
+  .price { font: 800 2.4rem/1.1 var(--display); letter-spacing: -.02em; margin: .2rem 0; }
+  .price small { font: 500 .85rem var(--body); color: var(--muted); letter-spacing: 0; }
+  .delta { font-weight: 600; font-size: .9rem; }
+  .delta.up { color: var(--up); } .delta.down { color: var(--down); }
+  .spark { width: 100%; height: 44px; margin: .5rem 0; display: block; }
+  .wcard table { font-size: .88rem; margin-top: .4rem; }
+  .wcard th, .wcard td { padding: .3rem .5rem; }
+  .wfoot { display: flex; justify-content: space-between; align-items: center; margin-top: .6rem; color: var(--muted); font-size: .85rem; }
+  .linkbtn { background: none; border: 0; color: var(--muted); cursor: pointer; text-decoration: underline; padding: 0; }
+  .empty { padding: 2rem 0; color: var(--muted); max-width: 52ch; }
+
+  @media (max-width: 640px) {
+    .hide-s { display: none; }
+    th, td { padding: .5rem .5rem; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .price { transition: color .3s; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Donut <span>Market</span></h1>
+  <span class="meta" id="modeLabel"></span>
+</header>
+<div class="banner" id="demoBanner" hidden>
+  Demo-Modus: Die Daten sind erfunden. Trag deinen API-Key in die <code>.env</code> ein und starte den Server neu, dann siehst du echte Angebote.
+</div>
+
+<nav role="tablist">
+  <button role="tab" aria-selected="true" data-tab="ah">Auktionshaus</button>
+  <button role="tab" aria-selected="false" data-tab="watch">Watchlist <span id="watchCount"></span></button>
+  <button role="tab" aria-selected="false" data-tab="orders">Orders</button>
+</nav>
+
+<main>
+  <!-- Auktionshaus -->
+  <section id="tab-ah">
+    <form class="toolbar" id="ahForm">
+      <input type="search" id="q" placeholder="Item suchen, z. B. diamond_sword (leer = alles)" aria-label="Item suchen">
+      <select id="sort" aria-label="Sortierung">
+        <option value="lowest_price">Günstigste zuerst</option>
+        <option value="highest_price">Teuerste zuerst</option>
+        <option value="recently_listed">Zuletzt eingestellt</option>
+      </select>
+      <select id="pages" aria-label="Anzahl Seiten">
+        <option value="1">1 Seite</option>
+        <option value="3" selected>3 Seiten</option>
+        <option value="5">5 Seiten</option>
+        <option value="10">10 Seiten</option>
+        <option value="20">20 Seiten</option>
+      </select>
+      <button class="btn" type="submit">Laden</button>
+    </form>
+    <p class="meta" id="ahMeta">Such ein Item oder lade das ganze Auktionshaus. Mehr Seiten bedeuten mehr API-Requests (Limit: 250 pro Minute).</p>
+    <div id="ahList"></div>
+  </section>
+
+  <!-- Watchlist -->
+  <section id="tab-watch" hidden>
+    <div class="toolbar">
+      <label class="meta" for="interval" style="align-self:center;margin:0">Aktualisieren alle</label>
+      <select id="interval">
+        <option value="30000">30 Sekunden</option>
+        <option value="60000" selected>1 Minute</option>
+        <option value="300000">5 Minuten</option>
+      </select>
+      <label class="meta" for="wpages" style="align-self:center;margin:0">Seiten pro Item</label>
+      <select id="wpages">
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3" selected>3</option>
+        <option value="5">5</option>
+      </select>
+      <button class="btn ghost" id="refreshNow" type="button">Jetzt aktualisieren</button>
+    </div>
+    <p class="meta" id="watchMeta"></p>
+    <div id="watchList"></div>
+  </section>
+
+  <!-- Orders -->
+  <section id="tab-orders" hidden>
+    <div class="toolbar">
+      <button class="btn ghost" id="ordersReload" type="button">Neu laden</button>
+    </div>
+    <p class="meta" id="ordersMeta"></p>
+    <div id="ordersList"></div>
+  </section>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const nf = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 2 });
+const nfFull = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 2 });
+
+function fmt(n) {
+  if (n == null || isNaN(n)) return '–';
+  const a = Math.abs(n);
+  if (a >= 1e9) return nf.format(n / 1e9) + 'B';
+  if (a >= 1e6) return nf.format(n / 1e6) + 'M';
+  if (a >= 1e3) return nf.format(n / 1e3) + 'k';
+  return nf.format(n);
+}
+const money = n => `<span title="${esc(nfFull.format(n))}">${fmt(n)}</span>`;
+function timeLeft(v) {
+  if (v == null) return '–';
+  if (typeof v !== 'number') return esc(v);
+  if (v > 1e11) v = Math.max(0, (v - Date.now()) / 1000);   // Millisekunden-Zeitstempel
+  const h = Math.floor(v / 3600), m = Math.floor((v % 3600) / 60);
+  return h >= 24 ? `${Math.floor(h / 24)}d ${h % 24}h` : `${h}h ${m}m`;
+}
+
+async function api(path) {
+  const r = await fetch(path);
+  let j = {};
+  try { j = await r.json(); } catch (_) {}
+  if (!r.ok) throw new Error(j.error || `Fehler ${r.status}`);
+  return j;
+}
+
+/* ---------- Aggregation ---------- */
+function makeTiers(listings) {
+  const m = new Map();
+  for (const l of listings) {
+    const key = Math.round(l.unit * 100) / 100;
+    let t = m.get(key);
+    if (!t) { t = { unit: key, listings: [], qty: 0 }; m.set(key, t); }
+    t.listings.push(l);
+    t.qty += l.count;
+  }
+  return [...m.values()].sort((a, b) => a.unit - b.unit);
+}
+function groupItems(listings) {
+  const m = new Map();
+  for (const l of listings) {
+    let g = m.get(l.id);
+    if (!g) { g = { id: l.id, name: l.name, listings: [] }; m.set(l.id, g); }
+    g.listings.push(l);
+  }
+  return [...m.values()].map(g => {
+    const tiers = makeTiers(g.listings);
+    return { ...g, tiers, qty: g.listings.reduce((s, l) => s + l.count, 0), low: tiers[0].unit };
+  }).sort((a, b) => a.name.localeCompare(b.name, 'de'));
+}
+
+/* ---------- Watchlist-Speicher ---------- */
+const store = {
+  load() { try { return JSON.parse(localStorage.getItem('donut.watch') || '{}'); } catch (_) { return {}; } },
+  save(w) { try { localStorage.setItem('donut.watch', JSON.stringify(w)); } catch (_) {} },
+};
+let watch = store.load();
+const isWatched = id => Object.prototype.hasOwnProperty.call(watch, id);
+function toggleWatch(id, name) {
+  if (isWatched(id)) delete watch[id];
+  else watch[id] = { name, added: Date.now(), history: [], current: null };
+  store.save(watch);
+  updateWatchCount();
+  if (!isWatched(id)) renderWatch();
+  else pollWatch([id]);
+}
+function updateWatchCount() {
+  const n = Object.keys(watch).length;
+  $('#watchCount').textContent = n ? `(${n})` : '';
+}
+
+/* ---------- Tabs ---------- */
+document.querySelectorAll('nav button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('nav button').forEach(x => x.setAttribute('aria-selected', x === b));
+  for (const t of ['ah', 'watch', 'orders']) $('#tab-' + t).hidden = (t !== b.dataset.tab);
+  if (b.dataset.tab === 'orders' && !ordersLoaded) loadOrders();
+  if (b.dataset.tab === 'watch') renderWatch();
+}));
+
+/* ---------- Auktionshaus ---------- */
+let groups = [], openItems = new Set(), openTiers = new Set();
+
+$('#ahForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const q = $('#q').value.trim(), sort = $('#sort').value, pages = $('#pages').value;
+  $('#ahMeta').textContent = 'Lade …';
+  $('#ahMeta').classList.remove('err');
+  try {
+    const r = await api(`/api/ah/scan?search=${encodeURIComponent(q)}&sort=${sort}&pages=${pages}`);
+    groups = groupItems(r.listings);
+    openItems.clear(); openTiers.clear();
+    $('#ahMeta').textContent = `${r.listings.length} Angebote aus ${r.pages} Seite(n), ${groups.length} verschiedene Items.`;
+    renderAh();
+  } catch (err) {
+    $('#ahMeta').textContent = err.message;
+    $('#ahMeta').classList.add('err');
+    $('#ahList').innerHTML = '';
+  }
+});
+
+function renderAh() {
+  if (!groups.length) { $('#ahList').innerHTML = '<p class="empty">Keine Angebote gefunden.</p>'; return; }
+  let h = `<table><thead><tr><th>Item</th><th class="num">Angebote</th><th class="num hide-s">Stück gesamt</th><th class="num">ab Preis/Stück</th><th></th></tr></thead><tbody>`;
+  for (const g of groups) {
+    const open = openItems.has(g.id);
+    h += `<tr class="item" data-id="${esc(g.id)}">
+      <td><span class="caret">${open ? '▾' : '▸'}</span>${esc(g.name)}</td>
+      <td class="num">${g.listings.length}</td>
+      <td class="num hide-s">${nf.format(g.qty)}</td>
+      <td class="num">${money(g.low)}</td>
+      <td class="num"><button class="star" data-watch="${esc(g.id)}" data-name="${esc(g.name)}" aria-pressed="${isWatched(g.id)}" aria-label="Zur Watchlist">★</button></td></tr>`;
+    if (open) {
+      h += `<tr class="detail"><td colspan="5"><table class="tiers"><thead><tr><th>Preis pro Stück</th><th class="num">Angebote</th><th class="num">Stück zu diesem Preis</th></tr></thead><tbody>`;
+      g.tiers.forEach((t, i) => {
+        const tk = g.id + '|' + t.unit;
+        const to = openTiers.has(tk);
+        h += `<tr class="tier${i === 0 ? ' best' : ''}" data-tier="${esc(tk)}"><td><span class="caret">${to ? '▾' : '▸'}</span>${money(t.unit)}</td><td class="num">${t.listings.length}</td><td class="num">${nf.format(t.qty)}</td></tr>`;
+        if (to) {
+          h += `<tr><td colspan="3" style="padding:0"><table class="sub"><thead><tr><th>Verkäufer</th><th class="num">Stück</th><th class="num">Gesamtpreis</th><th class="num">Restzeit</th></tr></thead><tbody>`;
+          for (const l of t.listings) h += `<tr><td>${esc(l.seller)}</td><td class="num">${l.count}</td><td class="num">${money(l.price)}</td><td class="num">${timeLeft(l.time_left)}</td></tr>`;
+          h += `</tbody></table></td></tr>`;
+        }
+      });
+      h += `</tbody></table></td></tr>`;
+    }
+  }
+  $('#ahList').innerHTML = h + '</tbody></table>';
+}
+
+$('#ahList').addEventListener('click', e => {
+  const star = e.target.closest('.star');
+  if (star) { toggleWatch(star.dataset.watch, star.dataset.name); star.setAttribute('aria-pressed', isWatched(star.dataset.watch)); return; }
+  const tier = e.target.closest('tr.tier');
+  if (tier) { const k = tier.dataset.tier; openTiers.has(k) ? openTiers.delete(k) : openTiers.add(k); renderAh(); return; }
+  const item = e.target.closest('tr.item');
+  if (item) { const k = item.dataset.id; openItems.has(k) ? openItems.delete(k) : openItems.add(k); renderAh(); }
+});
+
+/* ---------- Watchlist ---------- */
+let pollTimer = null, polling = false;
+
+async function pollWatch(only) {
+  const ids = only || Object.keys(watch);
+  if (!ids.length || polling) { renderWatch(); return; }
+  polling = true;
+  const pages = $('#wpages').value;
+  $('#watchMeta').textContent = 'Aktualisiere …';
+  for (const id of ids) {
+    const w = watch[id];
+    if (!w) continue;
+    try {
+      const r = await api(`/api/ah/scan?search=${encodeURIComponent(id)}&sort=lowest_price&pages=${pages}`);
+      const ls = r.listings.filter(l => l.id === id);
+      const now = Date.now();
+      if (!ls.length) { w.current = { t: now, empty: true }; w.error = null; continue; }
+      const tiers = makeTiers(ls);
+      w.current = {
+        t: now, low: tiers[0].unit, listings: ls.length,
+        qty: ls.reduce((s, l) => s + l.count, 0),
+        tiers: tiers.slice(0, 5).map(t => ({ unit: t.unit, listings: t.listings.length, qty: t.qty })),
+      };
+      w.history.push({ t: now, low: tiers[0].unit });
+      if (w.history.length > 300) w.history.splice(0, w.history.length - 300);
+      w.error = null;
+    } catch (err) { w.error = err.message; }
+  }
+  store.save(watch);
+  polling = false;
+  renderWatch();
+}
+
+function spark(hist) {
+  if (hist.length < 2) return '<svg class="spark" aria-hidden="true"></svg>';
+  const W = 280, H = 44, vs = hist.map(p => p.low);
+  const min = Math.min(...vs), max = Math.max(...vs), span = (max - min) || 1;
+  const pts = vs.map((v, i) => `${(i / (vs.length - 1) * W).toFixed(1)},${(H - 4 - (v - min) / span * (H - 8)).toFixed(1)}`).join(' ');
+  return `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Preisverlauf"><polyline points="${pts}" fill="none" stroke="var(--glaze)" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>`;
+}
+function delta(cur, ref, label) {
+  if (ref == null || cur == null || ref === 0) return '';
+  const pct = (cur - ref) / ref * 100;
+  if (Math.abs(pct) < 0.005) return `<span class="delta">±0 % ${label}</span>`;
+  return `<span class="delta ${pct > 0 ? 'up' : 'down'}">${pct > 0 ? '+' : ''}${nf.format(pct)} % ${label}</span>`;
+}
+
+function renderWatch() {
+  const ids = Object.keys(watch);
+  if (!ids.length) {
+    $('#watchMeta').textContent = '';
+    $('#watchList').innerHTML = '<p class="empty">Noch nichts auf der Watchlist. Such im Auktionshaus ein Item und klick auf den Stern, dann siehst du hier den Preis laufend.</p>';
+    return;
+  }
+  const last = Math.max(0, ...ids.map(i => watch[i].current ? watch[i].current.t : 0));
+  const perTick = ids.length * Number($('#wpages').value);
+  const perMin = Math.round(perTick * 60000 / Number($('#interval').value));
+  $('#watchMeta').textContent = (last ? `Letzte Aktualisierung: ${new Date(last).toLocaleTimeString('de-DE')}. ` : '') +
+    `Etwa ${perMin} API-Requests pro Minute bei dieser Einstellung (Limit 250). Die Seite muss offen bleiben, damit der Verlauf mitläuft.`;
+  $('#watchList').innerHTML = '<div class="watch-grid">' + ids.map(id => {
+    const w = watch[id], c = w.current, hist = w.history;
+    let body;
+    if (w.error) body = `<p class="err">${esc(w.error)}</p>`;
+    else if (!c) body = '<p class="meta">Warte auf erste Daten …</p>';
+    else if (c.empty) body = '<p class="meta">Aktuell kein Angebot in den geladenen Seiten. Probier mehr Seiten pro Item.</p>';
+    else {
+      const prev = hist.length > 1 ? hist[hist.length - 2].low : null;
+      body = `<div class="price">${money(c.low)} <small>pro Stück</small></div>
+        <div>${delta(c.low, prev, 'seit zuletzt')} ${hist.length > 1 ? '· ' + delta(c.low, hist[0].low, 'seit Start') : ''}</div>
+        ${spark(hist)}
+        <div class="meta" style="margin:0">${c.listings} Angebote, ${nf.format(c.qty)} Stück insgesamt</div>
+        <table><thead><tr><th>Preis/Stück</th><th class="num">Angebote</th><th class="num">Stück</th></tr></thead><tbody>
+        ${c.tiers.map(t => `<tr><td>${money(t.unit)}</td><td class="num">${t.listings}</td><td class="num">${nf.format(t.qty)}</td></tr>`).join('')}
+        </tbody></table>`;
+    }
+    return `<article class="wcard"><h3>${esc(w.name)}</h3>${body}
+      <div class="wfoot"><span>${hist.length} Messpunkte</span><button class="linkbtn" data-remove="${esc(id)}">Entfernen</button></div></article>`;
+  }).join('') + '</div>';
+}
+
+$('#watchList').addEventListener('click', e => {
+  const b = e.target.closest('[data-remove]');
+  if (!b) return;
+  delete watch[b.dataset.remove];
+  store.save(watch); updateWatchCount(); renderWatch(); renderAhIfVisible();
+});
+function renderAhIfVisible() { if (groups.length) renderAh(); }
+
+function restartTimer() {
+  clearInterval(pollTimer);
+  pollTimer = setInterval(() => pollWatch(), Number($('#interval').value));
+}
+$('#interval').addEventListener('change', () => { restartTimer(); renderWatch(); });
+$('#wpages').addEventListener('change', renderWatch);
+$('#refreshNow').addEventListener('click', () => pollWatch());
+
+/* ---------- Orders ---------- */
+let ordersLoaded = false;
+async function loadOrders() {
+  $('#ordersMeta').textContent = 'Lade …';
+  $('#ordersMeta').classList.remove('err');
+  try {
+    const r = await api('/api/orders?page=1');
+    ordersLoaded = true;
+    $('#ordersMeta').textContent = `${r.orders.length} Orders auf Seite 1.`;
+    const gs = groupItems(r.orders);
+    $('#ordersList').innerHTML = `<table><thead><tr><th>Item</th><th class="num">Orders</th><th class="num hide-s">Stück gesamt</th><th class="num">bis Preis/Stück</th></tr></thead><tbody>` +
+      gs.map(g => {
+        const top = g.tiers[g.tiers.length - 1].unit;
+        return `<tr><td><strong>${esc(g.name)}</strong></td><td class="num">${g.listings.length}</td><td class="num hide-s">${nf.format(g.qty)}</td><td class="num">${money(top)}</td></tr>`;
+      }).join('') + '</tbody></table>';
+  } catch (err) {
+    $('#ordersMeta').textContent = err.message;
+    $('#ordersMeta').classList.add('err');
+    $('#ordersList').innerHTML = '';
+  }
+}
+$('#ordersReload').addEventListener('click', loadOrders);
+
+/* ---------- Start ---------- */
+(async () => {
+  try {
+    const s = await api('/api/status');
+    $('#demoBanner').hidden = !s.demo;
+    $('#modeLabel').textContent = s.demo ? 'Demo-Modus' : 'Live mit deinem API-Key';
+  } catch (_) {}
+  updateWatchCount();
+  restartTimer();
+  if (Object.keys(watch).length) pollWatch();
+})();
+</script>
+</body>
+</html>
